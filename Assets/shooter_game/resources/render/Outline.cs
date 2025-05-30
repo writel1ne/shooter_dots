@@ -5,19 +5,19 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace shooter_game.resources.render
 {
-    class Outline : CustomPass
+    internal class Outline : CustomPass
     {
-        public LayerMask    outlineLayer = 0;
-        [ColorUsage(false, true)]
-        public Color        outlineColor = Color.black;
-        public float        threshold = 1;
+        private Material fullscreenOutline;
+        private RTHandle outlineBuffer;
+
+        [ColorUsage(false, true)] public Color outlineColor = Color.black;
+
+        public LayerMask outlineLayer = 0;
 
         // To make sure the shader ends up in the build, we keep a reference to it
-        [SerializeField, HideInInspector]
-        Shader                  outlineShader;
+        [SerializeField] [HideInInspector] private Shader outlineShader;
 
-        Material                fullscreenOutline;
-        RTHandle                outlineBuffer;
+        public float threshold = 1;
 
         protected override void Setup(ScriptableRenderContext renderContext, CommandBuffer cmd)
         {
@@ -45,8 +45,8 @@ namespace shooter_game.resources.render
             ctx.propertyBlock.SetFloat("_Threshold", threshold);
 
             // Render the outline buffer fullscreen
-            CoreUtils.SetRenderTarget(ctx.cmd, ctx.cameraColorBuffer, ClearFlag.None);
-            CoreUtils.DrawFullScreen(ctx.cmd, fullscreenOutline, ctx.propertyBlock, shaderPassId: 0);
+            CoreUtils.SetRenderTarget(ctx.cmd, ctx.cameraColorBuffer);
+            CoreUtils.DrawFullScreen(ctx.cmd, fullscreenOutline, ctx.propertyBlock);
         }
 
         protected override void Cleanup()
@@ -56,4 +56,3 @@ namespace shooter_game.resources.render
         }
     }
 }
-

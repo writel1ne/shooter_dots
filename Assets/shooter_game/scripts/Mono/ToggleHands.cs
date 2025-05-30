@@ -6,19 +6,15 @@ namespace shooter_game.scripts
 {
     public class ToggleHands : MonoBehaviour
     {
-        private bool _isClicked;
         public CustomPassVolume pass;
-    
-        void Update()
+        private bool _isClicked;
+
+        private void Update()
         {
             if (_isClicked)
-            {
                 pass.customPasses.ForEach(p => p.enabled = false);
-            }
             else
-            {
                 pass.customPasses.ForEach(p => p.enabled = true);
-            }
         }
 
         public void OnClick(InputAction.CallbackContext ctx)

@@ -5,6 +5,6 @@
         Activating,
         Deactivating,
         Deactivated,
-        Active,
+        Active
     }
 }

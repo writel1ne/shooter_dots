@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace shooter_game.scripts.animation.input_data
 {
@@ -10,22 +9,22 @@ namespace shooter_game.scripts.animation.input_data
 
         public VectorInputData(Vector3 vector)
         {
-           this.vector = vector;
-           this.lastVector = Vector3.zero;
+            this.vector = vector;
+            lastVector = Vector3.zero;
         }
 
         public VectorInputData()
         {
-            this.vector = Vector3.zero;
-            this.lastVector = Vector3.zero;
+            vector = Vector3.zero;
+            lastVector = Vector3.zero;
         }
 
         public override void UpdateData(IInputData data)
         {
             if (data is VectorInputData thisData)
             {
-                lastVector = this.vector;
-                this.vector = thisData.vector;
+                lastVector = vector;
+                vector = thisData.vector;
             }
         }
     }

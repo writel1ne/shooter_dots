@@ -1,6 +1,4 @@
-﻿using System;
-using ECM2;
-using UnityEngine;
+﻿using ECM2;
 
 namespace shooter_game.scripts.animation.input_data
 {
@@ -8,9 +6,9 @@ namespace shooter_game.scripts.animation.input_data
     {
         public float instantValueSeconds;
         public Character.MovementMode movementMode;
-        
+
         public PlayerJumpInputData(
-            Character.MovementMode movementMode = Character.MovementMode.None, 
+            Character.MovementMode movementMode = Character.MovementMode.None,
             float instantValueSeconds = 0)
         {
             this.movementMode = movementMode;
@@ -19,12 +17,11 @@ namespace shooter_game.scripts.animation.input_data
 
         public PlayerJumpInputData() : this(default)
         {
-            
         }
 
         public override void UpdateData(IInputData data)
         {
-            if (data is PlayerJumpInputData thisData )
+            if (data is PlayerJumpInputData thisData)
             {
                 movementMode = thisData.movementMode;
                 instantValueSeconds = thisData.instantValueSeconds;

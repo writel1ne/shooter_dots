@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine;
 
 namespace shooter_game.scripts.animation
 {
@@ -7,8 +6,8 @@ namespace shooter_game.scripts.animation
     {
         public AnimationState animationState { get; private set; } = AnimationState.Deactivating;
         public AnimationState lastAnimationState { get; private set; } = AnimationState.Deactivating;
-        public float time { get; private set; } = 0;
-        public float lastTime { get; private set; } = 0;
+        public float time { get; private set; }
+        public float lastTime { get; private set; }
         public bool firstTickAfterUpdate { get; private set; } = true;
 
         public void SetState(AnimationState newState)
@@ -20,7 +19,7 @@ namespace shooter_game.scripts.animation
                 lastTime = time;
                 time = 0;
                 firstTickAfterUpdate = true;
-               // Debug.Log($"set state {animationState} from {lastAnimationState}");
+                // Debug.Log($"set state {animationState} from {lastAnimationState}");
             }
         }
 
@@ -37,7 +36,7 @@ namespace shooter_game.scripts.animation
             lastTime = resetLastTime ? 0 : lastTime;
             firstTickAfterUpdate = true;
         }
-        
+
         public void ResetTime()
         {
             ResetTime(true);

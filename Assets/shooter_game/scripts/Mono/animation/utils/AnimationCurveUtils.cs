@@ -6,10 +6,10 @@ namespace shooter_game.scripts.animation.utils
     {
         public static Vector2 GetTimeRange(this AnimationCurve curve)
         {
-            Keyframe[] keyframes = curve.keys;
-            float minTime = float.MaxValue;
-            float maxTime = float.MinValue;
-            
+            var keyframes = curve.keys;
+            var minTime = float.MaxValue;
+            var maxTime = float.MinValue;
+
             foreach (var keyframe in keyframes)
             {
                 minTime = keyframe.time < minTime ? keyframe.time : minTime;

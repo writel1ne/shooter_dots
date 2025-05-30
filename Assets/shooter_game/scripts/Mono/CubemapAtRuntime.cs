@@ -4,6 +4,21 @@ namespace shooter_game.scripts.animation.input_data
 {
     public class CubemapAtRuntime : MonoBehaviour
     {
+        public enum ApplyMode
+        {
+            Skybox,
+            MaterialProperty
+        }
+
+        // Enum для удобства выбора флагов очистки в инспекторе
+        public enum CubemapFace_ClearFlags
+        {
+            Skybox,
+            Color,
+            Depth,
+            Nothing
+        }
+
         [Header("Cubemap Settings")]
         public int cubemapSize = 128; // Размер каждой грани кубмапы (должен быть степенью двойки)
 
@@ -17,12 +32,6 @@ namespace shooter_game.scripts.animation.input_data
 
         [Header("Target Object")] public GameObject objectToApplyTo; // Объект, на который навесим кубмапу (опционально)
 
-        public enum ApplyMode
-        {
-            Skybox,
-            MaterialProperty
-        }
-
         public ApplyMode applyMode = ApplyMode.MaterialProperty;
 
         public string
@@ -32,13 +41,13 @@ namespace shooter_game.scripts.animation.input_data
         private Cubemap generatedCubemap;
         private Camera renderCamera;
 
-        void Start()
+        private void Start()
         {
             // 1. Создаем объект Cubemap
             generatedCubemap = new Cubemap(cubemapSize, TextureFormat.RGBA32, true); // true для мип-уровней
 
             // 2. Создаем и настраиваем временную камеру для рендеринга
-            GameObject camGO = new GameObject("CubemapRenderCam");
+            var camGO = new GameObject("CubemapRenderCam");
             renderCamera = camGO.AddComponent<Camera>();
 
             // Позиционируем камеру там, откуда хотим снимать окружение
@@ -71,7 +80,7 @@ namespace shooter_game.scripts.animation.input_data
 
             // 3. Рендерим сцену в кубмапу
             // Этот метод отрендерит все 6 граней
-            bool success = renderCamera.RenderToCubemap(generatedCubemap);
+            var success = renderCamera.RenderToCubemap(generatedCubemap);
 
             if (!success)
             {
@@ -93,7 +102,22 @@ namespace shooter_game.scripts.animation.input_data
             Destroy(camGO);
         }
 
-        void ApplyCubemap()
+        private void OnDestroy()
+        {
+            // Очистка при уничтожении объекта
+            if (renderCamera != null) Destroy(renderCamera.gameObject);
+
+            if (generatedCubemap != null) Destroy(generatedCubemap);
+            // Если вы создавали материал скайбокса, его тоже можно здесь удалить,
+            // если он больше нигде не используется.
+            // if (RenderSettings.skybox != null && RenderSettings.skybox.GetTexture("_Tex") == generatedCubemap)
+            // {
+            //     Destroy(RenderSettings.skybox);
+            //     RenderSettings.skybox = null; // Или установить дефолтный
+            // }
+        }
+
+        private void ApplyCubemap()
         {
             if (generatedCubemap == null)
             {
@@ -105,7 +129,7 @@ namespace shooter_game.scripts.animation.input_data
             {
                 case ApplyMode.Skybox:
                     // Создаем новый материал для скайбокса (или используем существующий)
-                    Material skyboxMaterial = new Material(Shader.Find("Skybox/Cubemap"));
+                    var skyboxMaterial = new Material(Shader.Find("Skybox/Cubemap"));
                     skyboxMaterial.SetTexture("_Tex", generatedCubemap);
                     RenderSettings.skybox = skyboxMaterial;
                     DynamicGI.UpdateEnvironment(); // Обновить освещение окружения
@@ -115,31 +139,30 @@ namespace shooter_game.scripts.animation.input_data
                 case ApplyMode.MaterialProperty:
                     if (objectToApplyTo != null)
                     {
-                        Renderer rend = objectToApplyTo.GetComponent<Renderer>();
+                        var rend = objectToApplyTo.GetComponent<Renderer>();
                         if (rend != null && rend.material != null)
                         {
                             // Убедитесь, что у материала есть свойство с таким именем
                             if (rend.material.HasProperty(materialPropertyName))
                             {
                                 // Важно: работаем с копией материала, чтобы не изменить ассет
-                                Material instanceMaterial = rend.material;
+                                var instanceMaterial = rend.material;
                                 instanceMaterial.SetTexture(materialPropertyName, generatedCubemap);
                                 Debug.Log(
                                     $"Cubemap applied to material property '{materialPropertyName}' on {objectToApplyTo.name}.");
-                                
-                                Texture assignedTexture = instanceMaterial.GetTexture(materialPropertyName);
+
+                                var assignedTexture = instanceMaterial.GetTexture(materialPropertyName);
                                 if (assignedTexture == generatedCubemap)
-                                {
-                                    Debug.Log($"VERIFIED: Cubemap '{generatedCubemap.name}' (InstanceID: {generatedCubemap.GetInstanceID()}) successfully assigned and retrieved from material property '{materialPropertyName}'.", generatedCubemap);
-                                }
+                                    Debug.Log(
+                                        $"VERIFIED: Cubemap '{generatedCubemap.name}' (InstanceID: {generatedCubemap.GetInstanceID()}) successfully assigned and retrieved from material property '{materialPropertyName}'.",
+                                        generatedCubemap);
                                 else if (assignedTexture != null)
-                                {
-                                    Debug.LogWarning($"VERIFICATION FAILED: A different texture ('{assignedTexture.name}', InstanceID: {assignedTexture.GetInstanceID()}) is in the slot. Expected '{generatedCubemap.name}' (InstanceID: {generatedCubemap.GetInstanceID()}).", assignedTexture);
-                                }
+                                    Debug.LogWarning(
+                                        $"VERIFICATION FAILED: A different texture ('{assignedTexture.name}', InstanceID: {assignedTexture.GetInstanceID()}) is in the slot. Expected '{generatedCubemap.name}' (InstanceID: {generatedCubemap.GetInstanceID()}).",
+                                        assignedTexture);
                                 else
-                                {
-                                    Debug.LogWarning($"VERIFICATION FAILED: No texture is in the slot '{materialPropertyName}' after assignment.");
-                                }
+                                    Debug.LogWarning(
+                                        $"VERIFICATION FAILED: No texture is in the slot '{materialPropertyName}' after assignment.");
                             }
                             else
                             {
@@ -167,7 +190,7 @@ namespace shooter_game.scripts.animation.input_data
             if (renderCamera != null && generatedCubemap != null)
             {
                 renderCamera.transform.position = transform.position; // Обновляем позицию
-                bool success = renderCamera.RenderToCubemap(generatedCubemap);
+                var success = renderCamera.RenderToCubemap(generatedCubemap);
                 if (success)
                 {
                     // generatedCubemap.SmoothEdges();
@@ -182,36 +205,6 @@ namespace shooter_game.scripts.animation.input_data
                     Debug.LogError("Failed to regenerate cubemap.");
                 }
             }
-        }
-
-        void OnDestroy()
-        {
-            // Очистка при уничтожении объекта
-            if (renderCamera != null)
-            {
-                Destroy(renderCamera.gameObject);
-            }
-
-            if (generatedCubemap != null)
-            {
-                Destroy(generatedCubemap);
-            }
-            // Если вы создавали материал скайбокса, его тоже можно здесь удалить,
-            // если он больше нигде не используется.
-            // if (RenderSettings.skybox != null && RenderSettings.skybox.GetTexture("_Tex") == generatedCubemap)
-            // {
-            //     Destroy(RenderSettings.skybox);
-            //     RenderSettings.skybox = null; // Или установить дефолтный
-            // }
-        }
-
-        // Enum для удобства выбора флагов очистки в инспекторе
-        public enum CubemapFace_ClearFlags
-        {
-            Skybox,
-            Color,
-            Depth,
-            Nothing
         }
     }
 }

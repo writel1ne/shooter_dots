@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
-using UnityEngine.Rendering.RendererUtils;
 
 // Это ваш кастомный рендер-пасс.
 // Он будет рендерить объекты на слое FirstPersonHands
@@ -14,23 +11,26 @@ namespace shooter_game.resources.render
     // Это позволяет CustomPassVolume находить ваш скрипт
     [Serializable]
     [VolumeComponentMenu("Custom Passes/First Person Arms Render Pass")]
-    class FirstPersonRenderPass : CustomPass
+    internal class FirstPersonRenderPass : CustomPass
     {
+        private const string kCameraTag = "_FPSForegroundCamera";
         public float fov = 45;
         public LayerMask foregroundMask;
         public Quaternion cameraRotation = Quaternion.identity;
 
-        Camera foregroundCamera;
+        private Material depthClearMaterial;
 
-        const string kCameraTag = "_FPSForegroundCamera";
+        private Camera foregroundCamera;
 
-        Material depthClearMaterial;
+        private ProfilingSampler s_RenderFromCameraSampler = new("Render From Camera");
 
         // RTHandle            trueDepthBuffer;
 
         protected override void AggregateCullingParameters(ref ScriptableCullingParameters cullingParameters,
             HDCamera hdCamera)
-            => cullingParameters.cullingMask |= (uint)foregroundMask.value;
+        {
+            cullingParameters.cullingMask |= (uint)foregroundMask.value;
+        }
 
         protected override void Setup(ScriptableRenderContext renderContext, CommandBuffer cmd)
         {
@@ -58,7 +58,6 @@ namespace shooter_game.resources.render
             //        threshold = 0,
             //    };
             //    CustomPassVolume.RegisterGlobalCustomPass(CustomPassInjectionPoint.BeforePostProcess, outline);
-
         }
 
         protected override void Execute(CustomPassContext ctx)
@@ -80,7 +79,7 @@ namespace shooter_game.resources.render
 
             var depthTestOverride = new RenderStateBlock(RenderStateMask.Depth)
             {
-                depthState = new DepthState(true, CompareFunction.LessEqual),
+                depthState = new DepthState(true, CompareFunction.LessEqual)
             };
 
 
@@ -106,7 +105,7 @@ namespace shooter_game.resources.render
             {
                 var depthTestOverride2 = new RenderStateBlock(RenderStateMask.Depth)
                 {
-                    depthState = new DepthState(false, CompareFunction.Equal),
+                    depthState = new DepthState(false, CompareFunction.Equal)
                 };
 
                 // Before rendering the transparent objects, we render the foreground objects into the color buffer.
@@ -120,16 +119,14 @@ namespace shooter_game.resources.render
             }
         }
 
-        ProfilingSampler s_RenderFromCameraSampler = new ProfilingSampler("Render From Camera");
-
         public void RenderPassFromCamera(in CustomPassContext ctx, Camera view, RTHandle targetColor,
             RTHandle targetDepth, ClearFlag clearFlag, LayerMask layerMask,
             RenderQueueType renderQueueFilter = RenderQueueType.All, Material overrideMaterial = null,
-            int overrideMaterialIndex = 0, RenderStateBlock overrideRenderState = default(RenderStateBlock),
+            int overrideMaterialIndex = 0, RenderStateBlock overrideRenderState = default,
             bool renderDepth = true)
         {
             ShaderTagId[] depthTags = { HDShaderPassNames.s_DepthForwardOnlyName, HDShaderPassNames.s_DepthOnlyName };
-            ShaderTagId[] motionTags = { HDShaderPassNames.s_MotionVectorsName, new ShaderTagId("FirstPass") };
+            ShaderTagId[] motionTags = { HDShaderPassNames.s_MotionVectorsName, new("FirstPass") };
 
             if (targetColor != null && targetDepth != null)
                 CoreUtils.SetRenderTarget(ctx.cmd, targetColor, targetDepth, clearFlag);
@@ -143,8 +140,10 @@ namespace shooter_game.resources.render
                 using (new CustomPassUtils.OverrideCameraRendering(ctx, view))
                 {
                     using (new ProfilingScope(ctx.cmd, s_RenderFromCameraSampler))
+                    {
                         CustomPassUtils.DrawRenderers(ctx, renderDepth ? depthTags : motionTags, layerMask,
                             renderQueueFilter, overrideMaterial, overrideMaterialIndex, overrideRenderState);
+                    }
                 }
             }
         }

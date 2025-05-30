@@ -1,6 +1,4 @@
-﻿// Файл: PathFollowingSystem.cs
-
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -9,20 +7,16 @@ using UnityEngine;
 
 namespace shooter_game.scripts.DOTS.Navigation
 {
-    // Для Time.deltaTime, Debug.DrawLine
-
-// Компонент с данными для следования по пути
     public struct PathFollowData : IComponentData
     {
         public int CurrentWaypointIndex;
         public float MovementSpeed;
-        public float RotationSpeed; // В радианах/сек
-        public float ArrivalDistanceThresholdSq; // Квадрат дистанции для смены вейпоинта
+        public float RotationSpeed;
+        public float ArrivalDistanceThresholdSq;
     }
 
     [BurstCompile]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
-    [UpdateAfter(typeof(PathfindingSystem))] // После того как путь может быть рассчитан
     public partial struct PathFollowingSystem : ISystem
     {
         [BurstCompile]
@@ -30,78 +24,90 @@ namespace shooter_game.scripts.DOTS.Navigation
         {
             state.RequireForUpdate<CalculatedPathBufferElement>();
             state.RequireForUpdate<PathFollowData>();
+            // state.RequireForUpdate<PathfindingSystem>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            float deltaTime = SystemAPI.Time.DeltaTime;
-            var ecb = new EntityCommandBuffer(Allocator.Temp); // Для удаления буфера и PathFollowData
+            var deltaTime = SystemAPI.Time.DeltaTime;
+            var ecb = new EntityCommandBuffer(Allocator.Temp);
 
             foreach (var (transform, pathFollow, pathBuffer, entity) in
-                     SystemAPI.Query<RefRW<LocalTransform>, RefRW<PathFollowData>, DynamicBuffer<CalculatedPathBufferElement>>()
+                     SystemAPI
+                         .Query<RefRW<LocalTransform>, RefRW<PathFollowData>,
+                             DynamicBuffer<CalculatedPathBufferElement>>()
                          .WithEntityAccess())
             {
                 if (pathBuffer.IsEmpty || pathFollow.ValueRO.CurrentWaypointIndex >= pathBuffer.Length)
                 {
                     // Путь пройден или пуст
                     ecb.RemoveComponent<PathFollowData>(entity);
-                    ecb.RemoveComponent<CalculatedPathBufferElement>(entity); 
-                    // Можно добавить компонент "PathCompleteTag"
+                    ecb.RemoveComponent<CalculatedPathBufferElement>(entity);
                     continue;
                 }
 
-                float3 currentPosition = transform.ValueRO.Position;
-                float3 targetWaypoint = pathBuffer[pathFollow.ValueRO.CurrentWaypointIndex].Waypoint;
+                var currentPosition = transform.ValueRO.Position;
+                var targetWaypoint = pathBuffer[pathFollow.ValueRO.CurrentWaypointIndex].Waypoint;
 
-                // Движение к текущему вейпоинту
-                float3 directionToWaypoint = math.normalize(targetWaypoint - currentPosition);
-            
-                // Поворот
-                if (math.lengthsq(directionToWaypoint) > 0.001f) // Избегаем NaN если направление нулевое
-                {
-                    quaternion targetRotation = quaternion.LookRotationSafe(directionToWaypoint, math.up());
-                    transform.ValueRW.Rotation = math.slerp(transform.ValueRO.Rotation, targetRotation, pathFollow.ValueRO.RotationSpeed * deltaTime);
-                }
-            
-                // Перемещение
-                transform.ValueRW.Position += math.mul(transform.ValueRO.Rotation, new float3(0,0,1)) * pathFollow.ValueRO.MovementSpeed * deltaTime;
-                // Или проще: transform.ValueRW.Position += directionToWaypoint * pathFollow.ValueRO.MovementSpeed * deltaTime;
-                // (если не хотите чтобы поворот влиял на направление движения немедленно)
+                var directionToWaypoint = targetWaypoint - currentPosition;
+                var distanceToWaypoint = math.length(directionToWaypoint);
 
-
-                // Проверка достижения вейпоинта
+                //if (distanceToWaypoint < math.sqrt(pathFollow.ValueRO.ArrivalDistanceThresholdSq))
                 if (math.distancesq(currentPosition, targetWaypoint) < pathFollow.ValueRO.ArrivalDistanceThresholdSq)
                 {
                     pathFollow.ValueRW.CurrentWaypointIndex++;
+
                     if (pathFollow.ValueRO.CurrentWaypointIndex >= pathBuffer.Length)
                     {
-                        // Достигли конца пути
-                        // ecb.RemoveComponent<PathFollowData>(entity); // Уже обработано выше
-                        // ecb.RemoveComponent<CalculatedPathBufferElement>(entity);
-                        // Debug.Log($"Entity {entity.Index} reached end of path.");
+                        ecb.RemoveComponent<PathFollowData>(entity);
+                        ecb.RemoveComponent<CalculatedPathBufferElement>(entity);
+                        continue;
                     }
+
+                    targetWaypoint = pathBuffer[pathFollow.ValueRO.CurrentWaypointIndex].Waypoint;
+                    directionToWaypoint = targetWaypoint - currentPosition;
+                    distanceToWaypoint = math.length(directionToWaypoint);
                 }
-                
+
+                if (distanceToWaypoint > 0.001f)
+                {
+                    directionToWaypoint = directionToWaypoint / distanceToWaypoint;
+
+                    var targetRotation = quaternion.LookRotationSafe(directionToWaypoint, math.up());
+                    transform.ValueRW.Rotation = math.slerp(transform.ValueRO.Rotation, targetRotation,
+                        pathFollow.ValueRO.RotationSpeed * deltaTime);
+
+                    var moveDistance = math.min(pathFollow.ValueRO.MovementSpeed * deltaTime, distanceToWaypoint);
+                    transform.ValueRW.Position += directionToWaypoint * moveDistance;
+                }
+
 #if UNITY_EDITOR
                 if (pathBuffer.Length > 0)
                 {
                     if (pathFollow.ValueRO.CurrentWaypointIndex < pathBuffer.Length)
+                        Debug.DrawLine(transform.ValueRO.Position,
+                            pathBuffer[pathFollow.ValueRO.CurrentWaypointIndex].Waypoint, Color.yellow);
+
+                    for (var i = 0; i < pathBuffer.Length - 1; i++)
+                        Debug.DrawLine(pathBuffer[i].Waypoint, pathBuffer[i + 1].Waypoint, Color.cyan);
+
+                    for (var i = 0; i < pathBuffer.Length; i++)
                     {
-                        UnityEngine.Debug.DrawLine(transform.ValueRO.Position, pathBuffer[pathFollow.ValueRO.CurrentWaypointIndex].Waypoint, Color.yellow);
-                    }
-                    for (int i = 0; i < pathBuffer.Length - 1; i++)
-                    {
-                        UnityEngine.Debug.DrawLine(pathBuffer[i].Waypoint, pathBuffer[i + 1].Waypoint, Color.cyan);
+                        var pointColor = i == pathFollow.ValueRO.CurrentWaypointIndex ? Color.red : Color.green;
+                        Debug.DrawRay(pathBuffer[i].Waypoint, Vector3.up * 0.5f, pointColor);
                     }
                 }
 #endif
             }
+
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
         }
 
         [BurstCompile]
-        public void OnDestroy(ref SystemState state) { }
+        public void OnDestroy(ref SystemState state)
+        {
+        }
     }
 }

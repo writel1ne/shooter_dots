@@ -1,23 +1,20 @@
-﻿using System;
-using ECM2;
-using Unity.VisualScripting;
+﻿using ECM2;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace shooter_game.scripts.animation.input_data
 {
     public class PlayerInputData : VectorInputData
     {
         public Character.MovementMode movementMode;
-        public Vector2 playerMoveInput;
-        public Vector2 playerLookInput;
         public Vector3 playerLocalVelocity;
+        public Vector2 playerLookInput;
+        public Vector2 playerMoveInput;
 
-        public PlayerInputData(Character.MovementMode movementMode = Character.MovementMode.None, 
+        public PlayerInputData(Character.MovementMode movementMode = Character.MovementMode.None,
             Vector3 localVelocity = default,
-            Vector3 velocity = default, 
-            Vector2 moveInput = default, 
-            Vector2 lookInput = default) 
+            Vector3 velocity = default,
+            Vector2 moveInput = default,
+            Vector2 lookInput = default)
             : base(velocity)
         {
             this.movementMode = movementMode;
@@ -28,12 +25,11 @@ namespace shooter_game.scripts.animation.input_data
 
         public PlayerInputData() : this(default)
         {
-            
         }
-        
+
         public override void UpdateData(IInputData data)
         {
-            if (data is PlayerInputData thisData )
+            if (data is PlayerInputData thisData)
             {
                 base.UpdateData(thisData);
                 movementMode = thisData.movementMode;
@@ -41,7 +37,6 @@ namespace shooter_game.scripts.animation.input_data
                 playerMoveInput = thisData.playerMoveInput;
                 playerLocalVelocity = thisData.playerLocalVelocity;
             }
-            
         }
     }
 }

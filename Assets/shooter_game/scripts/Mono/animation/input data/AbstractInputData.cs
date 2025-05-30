@@ -5,11 +5,6 @@ namespace shooter_game.scripts.animation
 {
     public abstract class AbstractInputData : IInputData
     {
-        public AbstractInputData()
-        {
-            
-        }
-
         public Type GetDataType()
         {
             return GetType();

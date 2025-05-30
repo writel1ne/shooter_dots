@@ -30,7 +30,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169,0649</NoWarn>
-    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
@@ -58,24 +58,32 @@
     <Analyzer Include="F:\UnityProjects\shooter_dots\Library\PackageCache\com.unity.entities@e581b903be8e\Unity.Entities\SourceGenerators\Unity.Entities.Analyzer.CodeFixes.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\Octree\OctreeManagerWithoutJobSystem.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\input data\AbstractInputData.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\AnimationManager.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\utils\AnimationCurveUtils.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\SubSceneLoaderSystem.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\UnitPathRequesterAuthoring.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\AnimationStateManager.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\Octree\OctreeManagerSystem.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\Octree\OctreeBuildJob.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\profiles\SideTiltProfile.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\input data\IInputData.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\CubemapAtRuntime.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\first person\FirstPersonCamera.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\PathfindingSystemOld.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\first person\FirstPersonCharacterLookInput.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\Octree\OctreeUtils.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Collisions\SyncCollidersSystem.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\profiles\templates\BaseCurveProfile.cs" />
     <Compile Include="Assets\shooter_game\resources\render\FPSForeground.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\Octree\OctreeVisualizer.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\PathfindingSystem.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Collisions\EntityWorldColliders.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Collisions\WorldCollidersBaker.cs" />
     <Compile Include="Assets\shooter_game\resources\render\Outline.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\profiles\WalkBobbing.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\Physics\Player\PlayerAuthoring.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\input data\PlayerJumpInputData.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\AnimatorParameter.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
@@ -87,6 +95,7 @@
     <Compile Include="Assets\shooter_game\scripts\Mono\first person\FirstPersonCharacterInput.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\AStar\AStarOctreePathfinding.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\profiles\templates\AnimationProfileBase.cs" />
+    <Compile Include="Assets\shooter_game\scripts\DOTS\ToggleSubSceneSystem.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\AnimationState.cs" />
     <Compile Include="Assets\shooter_game\scripts\DOTS\Navigation\AStar\AStarPathfindingJob.cs" />
     <Compile Include="Assets\shooter_game\scripts\Mono\animation\profiles\templates\AnimationProfile.cs" />
@@ -105,6 +114,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
     <None Include="Assets\shooter_game\resources\render\ForegroundDepthClear.shader" />
+    <None Include="Assets\FastScriptReload\Third-Party Notices.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
@@ -1014,17 +1024,14 @@
     <Reference Include="Unity.Multiplayer.Center.Common">
       <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.Entities.Hybrid">
-      <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Entities.Hybrid.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.Mathematics.Extensions">
       <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Mathematics.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Entities.Graphics.Editor">
       <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Entities.Graphics.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
-      <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
+    <Reference Include="Unity.Entities.Hybrid">
+      <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Entities.Hybrid.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Entities.Build">
       <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Entities.Build.dll</HintPath>
@@ -1037,6 +1044,9 @@
     </Reference>
     <Reference Include="Unity.Transforms">
       <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.Transforms.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
+      <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>F:\UnityProjects\shooter_dots\Library\ScriptAssemblies\Unity.TextMeshPro.dll</HintPath>

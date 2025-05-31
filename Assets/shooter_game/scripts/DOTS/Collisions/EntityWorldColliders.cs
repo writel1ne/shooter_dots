@@ -246,7 +246,7 @@ namespace shooter_game.scripts.DOTS.Collisions
                         break;
                 }
 
-                switch (i)
+                switch (j)
                 {
                     case 0:
                         otherAxis = other.AxisX;
@@ -267,10 +267,10 @@ namespace shooter_game.scripts.DOTS.Collisions
             // --- Тесты по осям, полученным из векторных произведений ---
             // L = A.AxisX x B.AxisX
             float ra, rb; // Projected radii
-            Vector3 L;
+            float3 L;
 
             L = math.cross(AxisX, other.AxisX);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 // Проверяем, что оси не параллельны (L не нулевой вектор)
                 // L не обязательно нормализован, но формула работает: | Dot(T,L) | > ra*|L| + rb*|L|
@@ -283,7 +283,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisX x B.AxisY
             L = math.cross(AxisX, other.AxisY);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.y * R[2][1] + Extents.z * R[1][1];
                 rb = other.Extents.x * R[0][2] + other.Extents.z * R[0][0];
@@ -292,7 +292,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisX x B.AxisZ
             L = math.cross(AxisX, other.AxisZ);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.y * R[2][2] + Extents.z * R[1][2];
                 rb = other.Extents.x * R[0][1] + other.Extents.y * R[0][0];
@@ -301,7 +301,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisY x B.AxisX
             L = math.cross(AxisY, other.AxisX);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.x * R[2][0] + Extents.z * R[0][0];
                 rb = other.Extents.y * R[1][2] +
@@ -312,7 +312,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisY x B.AxisY
             L = math.cross(AxisY, other.AxisY);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.x * R[2][1] + Extents.z * R[0][1];
                 rb = other.Extents.x * R[1][2] +
@@ -322,7 +322,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisY x B.AxisZ
             L = math.cross(AxisY, other.AxisZ);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.x * R[2][2] + Extents.z * R[0][2];
                 rb = other.Extents.x * R[1][1] +
@@ -332,7 +332,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisZ x B.AxisX
             L = math.cross(AxisZ, other.AxisX);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.x * R[1][0] + Extents.y * R[0][0];
                 rb = other.Extents.y * R[2][2] +
@@ -342,7 +342,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisZ x B.AxisY
             L = math.cross(AxisZ, other.AxisY);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.x * R[1][1] + Extents.y * R[0][1];
                 rb = other.Extents.x * R[2][2] +
@@ -352,7 +352,7 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             // L = A.AxisZ x B.AxisZ
             L = math.cross(AxisZ, other.AxisZ);
-            if (L.sqrMagnitude > epsilon)
+            if (math.lengthsq(L) > epsilon)
             {
                 ra = Extents.x * R[1][2] + Extents.y * R[0][2];
                 rb = other.Extents.x * R[2][1] +

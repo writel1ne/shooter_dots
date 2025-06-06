@@ -14,9 +14,15 @@ namespace shooter_game.scripts.DOTS.Collisions
     {
         private bool _isFirstUpdate;
         private int _ticks;
+        private EntityQuery _buildRequestQuery;
 
         public void OnCreate(ref SystemState state)
         {
+            _buildRequestQuery = state.GetEntityQuery(
+                ComponentType.ReadOnly<BuildOctreeRequest>(),
+                ComponentType.ReadOnly<OctreeBuildParams>()
+            );
+            
             _ticks = 250;
             _isFirstUpdate = true;
 
@@ -40,20 +46,24 @@ namespace shooter_game.scripts.DOTS.Collisions
                 if (collidersComponent.Colliders.IsCreated) collidersComponent.Colliders.Dispose();
             }
         }
-
+        
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var worldCollidersRW = SystemAPI.GetSingletonRW<EntityWorldColliders>();
+            //var worldCollidersRW = SystemAPI.GetSingletonRW<EntityWorldColliders>();
+            SystemAPI.TryGetSingletonRW<EntityWorldColliders>(out var worldCollidersRW);
 
-            if (!worldCollidersRW.ValueRO.Colliders.IsCreated) return;
+            if (!worldCollidersRW.IsValid) return;
 
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
+            int i = 0;
             foreach (var (request, entity) in SystemAPI.Query<RefRO<GameObjectUpdateSyncColliderRequest>>()
                          .WithEntityAccess())
             {
-                UpdateData(entity, request, ref worldCollidersRW.ValueRW);
+                UpdateData(entity, request, worldCollidersRW);
 
+                i++;
                 ecb.RemoveComponent<GameObjectUpdateSyncColliderRequest>(entity);
             }
 
@@ -62,24 +72,26 @@ namespace shooter_game.scripts.DOTS.Collisions
 
             if (_ticks <= 0)
             {
-                if (_isFirstUpdate && SystemAPI.TryGetSingleton<EntityWorldColliders>(out var colliders) &&
-                    colliders.Colliders.Count > 0)
+                if (_isFirstUpdate 
+                    && _buildRequestQuery.IsEmptyIgnoreFilter)
                 {
                     var singletonEntity = state.EntityManager.CreateEntity();
 
                     var buildParams = new OctreeBuildParams
                     {
                         WorldBounds = new AABB { Center = float3.zero, Extents = new float3(60, 60, 60) },
-                        MinNodeSize = 0.5f,
-                        MaxDepth = 15,
+                        MinNodeSize = 1f,
+                        MaxDepth = 8,
                         ObstacleLayerMaskValue = 1
                     };
 
                     state.EntityManager.AddComponent<BuildOctreeRequest>(singletonEntity);
                     state.EntityManager.AddComponentData(singletonEntity, buildParams);
 
-                    _isFirstUpdate = false;
+                    //_isFirstUpdate = false;
                 }
+                
+                _ticks = 5;
             }
             else
             {
@@ -88,15 +100,19 @@ namespace shooter_game.scripts.DOTS.Collisions
         }
 
         private void UpdateData(Entity entity, RefRO<GameObjectUpdateSyncColliderRequest> request,
-            ref EntityWorldColliders collidersComponent)
+            RefRW<EntityWorldColliders> collidersComponent)
         {
-            if (collidersComponent.Colliders.ContainsKey(entity))
-                collidersComponent.Colliders[entity] = new OBB(request.ValueRO.Bounds, request.ValueRO.Quaternion,
+            if (collidersComponent.ValueRW.Colliders.ContainsKey(entity))
+            {
+                collidersComponent.ValueRW.Colliders[entity] = new OBB(request.ValueRO.Bounds, request.ValueRO.Quaternion,
                     request.ValueRO.Scale, request.ValueRO.Center);
+            }
             else
-                collidersComponent.Colliders.Add(entity,
+            {
+                collidersComponent.ValueRW.Colliders.Add(entity,
                     new OBB(request.ValueRO.Bounds, request.ValueRO.Quaternion, request.ValueRO.Scale,
                         request.ValueRO.Center));
+            }
         }
     }
 }

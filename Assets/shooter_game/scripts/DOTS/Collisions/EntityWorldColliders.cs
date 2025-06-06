@@ -27,14 +27,12 @@ namespace shooter_game.scripts.DOTS.Collisions
         public float3 Center;
         public float3 Extents;
         public quaternion Rotation;
-
-        // Кэшированные оси для производительности
+        
         private float3 _axisX;
         private float3 _axisY;
         private float3 _axisZ;
         private bool _axesInitialized;
-
-        // Свойства для доступа к осям с ленивой инициализацией
+        
         public float3 AxisX
         {
             get
@@ -70,45 +68,27 @@ namespace shooter_game.scripts.DOTS.Collisions
             _axesInitialized = true;
         }
 
-        public OBB(AABB aabb, Quaternion orientation, Vector3 scale, Vector3 center)
+        public OBB(AABB aabb, Quaternion orientation, float3 scale, float3 center)
         {
             Center = center;
-            //Extents = Vector3.Scale(aabb.Extents, scale);
-            //Extents = math.mul(aabb.Extents, new float3(center));
             Extents = math.abs(new float3(aabb.Extents.x * scale.x, aabb.Extents.y * scale.y,
                 aabb.Extents.z * scale.z));
-            //Extents = aabb.Extents;
             Rotation = orientation;
-            _axesInitialized = false; // Пометить для ленивой инициализации
-            // Можно вызвать InitializeAxes() здесь, если не нужна ленивая
-            // InitializeAxes(); 
+            _axesInitialized = false;
             _axisX = default;
             _axisY = default;
             _axisZ = default;
         }
 
-        public OBB(Bounds aabb, Quaternion orientation, Vector3 scale, Vector3 center) : this(aabb.ToAABB(),
+        public OBB(Bounds aabb, Quaternion orientation, float3 scale, float3 center) : this(aabb.ToAABB(),
             orientation, scale, center)
         {
         }
 
-        // public OBB(Vector3 worldPosition, Quaternion worldOrientation, Bounds localAABB)
-        // {
-        //     Center = worldPosition + worldOrientation * localAABB.center;
-        //     Extents = localAABB.extents; // localAABB.extents - это уже полуразмеры
-        //     Rotation = worldOrientation;
-        //     _axesInitialized = false;
-        //     // InitializeAxes();
-        //     _axisX = default;
-        //     _axisY = default;
-        //     _axisZ = default;
-        // }
-
-
-        public Vector3[] GetCorners()
+        public float3[] GetCorners()
         {
-            if (!_axesInitialized) InitializeAxes(); // Убедимся, что оси инициализированы
-            var corners = new Vector3[8];
+            if (!_axesInitialized) InitializeAxes();
+            var corners = new float3[8];
             var scaledX = _axisX * Extents.x;
             var scaledY = _axisY * Extents.y;
             var scaledZ = _axisZ * Extents.z;
@@ -153,16 +133,13 @@ namespace shooter_game.scripts.DOTS.Collisions
 
         public bool Intersects(ref EntityWorldColliders others)
         {
-            var valueArray = others.Colliders.GetValueArray(Allocator.Temp);
-
-            foreach (var obb in valueArray)
-                if (Intersects(obb))
+            foreach (var obb in others.Colliders)
+                if (Intersects(obb.Value))
                 {
-                    valueArray.Dispose();
                     return true;
                 }
 
-            valueArray.Dispose();
+            // valueArray.Dispose();
             return false;
         }
 

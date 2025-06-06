@@ -4,9 +4,7 @@ using Unity.Mathematics;
 
 namespace shooter_game.scripts.DOTS.Navigation.Octree
 {
-    public struct BuildOctreeRequest : IComponentData
-    {
-    }
+    public struct BuildOctreeRequest : IComponentData { }
 
     public struct OctreeReference : IComponentData
     {
@@ -19,8 +17,7 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
         LeafFree,
         LeafBlocked
     }
-
-    [BurstCompile]
+    
     public struct OctreeNode
     {
         public AABB Bounds;
@@ -30,8 +27,7 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
         public int ChildrenStartIndex;
         public int ParentIndex;
     }
-
-    [BurstCompile]
+    
     public struct OctreeBuildParams : IComponentData
     {
         public AABB WorldBounds;

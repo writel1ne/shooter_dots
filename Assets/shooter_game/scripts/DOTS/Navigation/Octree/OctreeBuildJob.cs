@@ -38,34 +38,32 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
 
         public void Execute()
         {
-            var buildNodes = new NativeList<NodeBuildData>(4096, Allocator.Temp);
-            var processingQueue = new NativeQueue<int>(Allocator.Temp);
+            float3 one = new float3(1, 1, 1);
+            NativeList<NodeBuildData> buildNodes = new NativeList<NodeBuildData>(4096, Allocator.Temp);
+            NativeQueue<int> processingQueue = new NativeQueue<int>(Allocator.Temp);
 
             buildNodes.Add(new NodeBuildData(BuildParams.WorldBounds, -1, 0));
             processingQueue.Enqueue(0);
 
-            var tempHitsContainer = new NativeList<int>(8, Allocator.Temp);
+            NativeList<int> tempHitsContainer = new NativeList<int>(8, Allocator.Temp);
 
+            //var collidersArray = new NativeReference<NativeArray<OBB>>(Colliders.Colliders.GetValueArray(Allocator.Temp), Allocator.Temp);
+            
             while (processingQueue.TryDequeue(out var currentNodeListIndex))
             {
-                var currentNodeData = buildNodes[currentNodeListIndex];
+                NodeBuildData currentNodeData = buildNodes[currentNodeListIndex];
+                
+                bool shouldSubdivide = !(currentNodeData.Depth >= BuildParams.MaxDepth);
 
-                var shouldSubdivide = !(currentNodeData.Depth >= BuildParams.MaxDepth);
-
-                var nodeFullSize = currentNodeData.Bounds.Extents * 2f;
+                float3 nodeFullSize = currentNodeData.Bounds.Extents * 2f;
                 if (math.min(nodeFullSize.x, math.min(nodeFullSize.y, nodeFullSize.z)) <= BuildParams.MinNodeSize)
                     shouldSubdivide = false;
 
                 tempHitsContainer.Clear();
-
-                //bool hasObstacle = UnityEngine.Physics.OverlapBox(currentNodeData.Bounds.Center, currentNodeData.Bounds.Extents).Length > 0;
-
-
-                var hasObstacle =
-                    new OBB(currentNodeData.Bounds, Quaternion.identity, Vector3.one, currentNodeData.Bounds.Center)
+                
+                bool hasObstacle =
+                    new OBB(currentNodeData.Bounds, Quaternion.identity, one, currentNodeData.Bounds.Center)
                         .Intersects(ref Colliders);
-
-                //bool hasObstacle = false;
 
                 if (!hasObstacle)
                 {
@@ -82,17 +80,17 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
                 }
 
                 currentNodeData.NodeType = OctreeNodeType.Branch;
-                var parentCenter = currentNodeData.Bounds.Center;
-                var childExtents = currentNodeData.Bounds.Extents * 0.5f;
+                float3 parentCenter = currentNodeData.Bounds.Center;
+                float3 childExtents = currentNodeData.Bounds.Extents * 0.5f;
 
                 for (var i = 0; i < 8; i++)
                 {
-                    var offsetDirection = GetOctantDirection(i);
-                    var childCenter = parentCenter + offsetDirection * childExtents;
-                    var childBounds = new AABB { Center = childCenter, Extents = childExtents };
+                    float3 offsetDirection = GetOctantDirection(i);
+                    float3 childCenter = parentCenter + offsetDirection * childExtents;
+                    AABB childBounds = new AABB { Center = childCenter, Extents = childExtents };
 
-                    var newChildListIndex = buildNodes.Length;
-                    var childNodeBuildData = new NodeBuildData(
+                    int newChildListIndex = buildNodes.Length;
+                    NodeBuildData childNodeBuildData = new NodeBuildData(
                         childBounds,
                         currentNodeListIndex,
                         currentNodeData.Depth + 1);
@@ -107,6 +105,7 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
                 buildNodes[currentNodeListIndex] = currentNodeData;
             }
 
+            //collidersArray.Dispose();
             tempHitsContainer.Dispose();
             processingQueue.Dispose();
 
@@ -125,7 +124,7 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
                 {
                     var buildNode = buildNodes[i];
                     var childrenStartIndex = -1;
-                    if (buildNode.NodeType == OctreeNodeType.Branch && buildNode.ChildListIndices.Length > 0)
+                    if (buildNode is { NodeType: OctreeNodeType.Branch, ChildListIndices: { Length: > 0 } })
                         // Важно: дети теперь расположены подряд.
                         // ChildrenStartIndex будет указывать на ПЕРВОГО ребенка этой ветви в общем массиве узлов.
                         // Мы должны убедиться, что дети каждой ветви добавляются в buildNodes подряд.
@@ -163,6 +162,11 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
                     };
                 }
 
+                if (ResultOctreeRef.IsCreated && ResultOctreeRef.Value.IsCreated)
+                {
+                    ResultOctreeRef.Value.Dispose();
+                }
+                
                 ResultOctreeRef.Value = blobBuilder.CreateBlobAssetReference<OctreeBlobAsset>(ResultAllocator);
                 blobBuilder.Dispose();
             }

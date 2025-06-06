@@ -1,12 +1,10 @@
 ﻿using System;
 using shooter_game.scripts.DOTS.Collisions;
-using shooter_game.scripts.DOTS.Navigation.Octree;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace shooter_game.scripts.DOTS.Navigation
+namespace shooter_game.scripts.DOTS.Navigation.Octree
 {
     [BurstCompile]
     public class OctreeVisualizer : MonoBehaviour
@@ -70,13 +68,13 @@ namespace shooter_game.scripts.DOTS.Navigation
             if (_octreeReferenceQuery.IsEmpty) return;
 
             var octreeEntity = _octreeReferenceQuery.GetSingletonEntity();
-            var colliderEntity = _colliderReferenceQuery.GetSingletonEntity();
+            //var colliderEntity = _colliderReferenceQuery.GetSingletonEntity();
             if (octreeEntity == Entity.Null) return;
 
             try
             {
                 _octreeRefComponent = _entityManager.GetComponentData<OctreeReference>(octreeEntity);
-                _colliderRefComponent = _entityManager.GetComponentData<EntityWorldColliders>(colliderEntity);
+                //_colliderRefComponent = _entityManager.GetComponentData<EntityWorldColliders>(colliderEntity);
             }
             catch (ArgumentException)
             {
@@ -88,7 +86,9 @@ namespace shooter_game.scripts.DOTS.Navigation
 
             ref var octreeAsset = ref _octreeRefComponent.Value.Value;
 
-            if (octreeAsset.Nodes.Length == 0 || _colliderRefComponent.Colliders.Count == 0) return;
+            if (octreeAsset.Nodes.Length == 0 
+                //|| _colliderRefComponent.Colliders.Count == 0
+                ) return;
 
             for (var i = 0; i < octreeAsset.Nodes.Length; i += 1)
             {
@@ -96,16 +96,15 @@ namespace shooter_game.scripts.DOTS.Navigation
                 DrawNodeGizmo(in node);
             }
 
-            var valueArray = _colliderRefComponent.Colliders.GetValueArray(Allocator.Temp);
-
-            foreach (var v in valueArray)
-            {
-                Gizmos.color = Color.blueViolet;
-                v.DrawGizmos(Color.blueViolet);
-                //Gizmos.DrawCube(v.Center, v.Extents);
-            }
-
-            valueArray.Dispose();
+            // var valueArray = _colliderRefComponent.Colliders.GetValueArray(Allocator.Temp);
+            //
+            // foreach (var v in valueArray)
+            // {
+            //     Gizmos.color = Color.blueViolet;
+            //     v.DrawGizmos(Color.blueViolet);
+            // }
+            //
+            // valueArray.Dispose();
         }
 
         private void InitializeIfNeeded()
@@ -116,8 +115,8 @@ namespace shooter_game.scripts.DOTS.Navigation
             if (world != null && world.IsCreated)
             {
                 _entityManager = world.EntityManager;
-                _octreeReferenceQuery = _entityManager.CreateEntityQuery(typeof(OctreeReference));
-                _colliderReferenceQuery = _entityManager.CreateEntityQuery(typeof(EntityWorldColliders));
+                _octreeReferenceQuery = _entityManager.CreateEntityQuery(ComponentType.ReadOnly<OctreeReference>());
+                //_colliderReferenceQuery = _entityManager.CreateEntityQuery(ComponentType.ReadOnly<EntityWorldColliders>());
                 _initialized = true;
             }
         }

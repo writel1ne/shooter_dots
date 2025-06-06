@@ -47,17 +47,22 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
             {
                 if (_buildJobHandle.IsCompleted)
                 {
-                    _buildJobHandle.Complete();
+                    //_buildJobHandle.Complete();
+                    _jobScheduled = false;
 
                     var builtOctree = _jobResultOctreeRef.Value;
 
                     if (builtOctree.IsCreated)
                     {
                         var ecb = new EntityCommandBuffer(Allocator.Temp);
+                        bool entityExists = SystemAPI.TryGetSingletonEntity<OctreeReference>(out var octreeEntity);
+                        Entity octreeSingletonEntity = entityExists ? octreeEntity : ecb.CreateEntity();
 
-                        var octreeSingletonEntity = ecb.CreateEntity();
-                        ecb.AddComponent(octreeSingletonEntity, new OctreeReference { Value = builtOctree });
-
+                        if (entityExists) 
+                            ecb.SetComponent(octreeSingletonEntity, new OctreeReference { Value = builtOctree });
+                        else 
+                            ecb.AddComponent(octreeSingletonEntity, new OctreeReference { Value = builtOctree });
+                        
                         if (!_buildRequestQuery.IsEmptyIgnoreFilter)
                         {
                             var requestEntity = _buildRequestQuery.GetSingletonEntity();
@@ -67,13 +72,8 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
 
                         ecb.Playback(state.EntityManager);
                         ecb.Dispose();
-
-                        _jobScheduled = false;
-                        state.Enabled = false;
-                    }
-                    else
-                    {
-                        _jobScheduled = false;
+                        
+                       // state.Enabled = false;
                     }
                 }
                 else
@@ -97,7 +97,7 @@ namespace shooter_game.scripts.DOTS.Navigation.Octree
                     ResultAllocator = Allocator.Persistent,
                     ResultOctreeRef = _jobResultOctreeRef
                 };
-
+                
                 _buildJobHandle = buildJob.Schedule(state.Dependency);
                 //_buildJobHandle.Complete();
                 state.Dependency = _buildJobHandle;
